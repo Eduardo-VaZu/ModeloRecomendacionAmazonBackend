@@ -87,6 +87,12 @@ class HybridConfig:
 
 
 @dataclass(frozen=True)
+class DemoConfig:
+    n_users: int
+    top_k: int
+
+
+@dataclass(frozen=True)
 class Config:
     seed: int
     paths: PathsConfig
@@ -98,6 +104,7 @@ class Config:
     content: ContentConfig
     als: ALSConfig
     hybrid: HybridConfig
+    demo: DemoConfig
 
 
 def load_config(path: Path = DEFAULT_CONFIG_PATH) -> Config:
@@ -121,4 +128,5 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> Config:
         content=ContentConfig(**{**content, "ngram_range": tuple(content["ngram_range"])}),
         als=ALSConfig(**raw["als"]),
         hybrid=HybridConfig(**raw["hybrid"]),
+        demo=DemoConfig(**raw["demo"]),
     )

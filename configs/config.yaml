@@ -44,3 +44,7 @@ als:                        # R4: Etapa 2
 
 hybrid:                     # R5
   blend_weight: 0.7         # peso de ALS en la mezcla con el puntaje de contenido
+
+demo:                       # paquete que consume el prototipo visual (backend/)
+  n_users: 500              # muestra de usuarios de test exportados
+  top_k: 20                 # recomendaciones guardadas por usuario y modelo

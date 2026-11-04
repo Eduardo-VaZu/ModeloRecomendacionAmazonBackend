@@ -45,11 +45,19 @@ class Recommender(ABC):
 
     def recommend(self, user_idx: np.ndarray, k: int, exclude_seen: bool = True) -> np.ndarray:
         """Matriz (n_usuarios, k) con los índices de producto recomendados."""
+        return self.recommend_with_scores(user_idx, k, exclude_seen)[0]
+
+    def recommend_with_scores(
+        self, user_idx: np.ndarray, k: int, exclude_seen: bool = True
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Como `recommend`, pero también devuelve el puntaje de cada producto recomendado."""
         if self._seen is None:
             raise RuntimeError(f"{self.name} no está entrenado; llama a fit() primero")
         user_idx = np.asarray(user_idx)
         seen = self._seen[user_idx] if exclude_seen else None
-        return top_k(self._score_items(user_idx), k, seen)
+        scores = self._score_items(user_idx)
+        items = top_k(scores, k, seen)
+        return items, np.take_along_axis(np.asarray(scores), items, axis=1)
 
     @abstractmethod
     def _fit(self, train: InteractionData) -> None: ...

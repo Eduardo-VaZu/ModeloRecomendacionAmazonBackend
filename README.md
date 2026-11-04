@@ -23,8 +23,53 @@ pip install -e .
 | 3. Entrenamiento | `python scripts/03_train.py` | Fases 3-5 |
 | 4. Hiperparámetros (validación) | `python scripts/04_tune.py` | Fase 5 |
 | 5. Evaluación (test) | `python scripts/05_evaluate.py` | O1 listo; O2 en la Fase 6 |
+| 6. Paquete del prototipo | `python scripts/06_export_demo.py` | O1 listo; contenido e híbrido en la Fase 5 |
 
 Todos los parámetros están en [`configs/config.yaml`](configs/config.yaml).
+
+## Backend del prototipo visual
+
+La interfaz del prototipo vive en otro repo, **ModeloRecomendacionAmazonFrontend** (React). Este repo le sirve la API.
+
+```
+pipeline ML ──06_export_demo──▶ artifacts/demo/*.jsonl ──make seed──▶ Postgres ◀── FastAPI ◀── frontend (otro repo)
+```
+
+- `backend/`: FastAPI + SQLModel + Alembic, con capas routers → handlers → unit of work → repositorios. Solo lee recomendaciones precalculadas; no entrena modelos.
+- `docker-compose.yml`: servicios `db`, `migrations`, `pgadmin` y `backend`.
+- CORS: por defecto acepta `http://localhost:5173` y `http://localhost:5180`. Otros orígenes se agregan con `CORS_ORIGINS` en `.env`.
+
+### Puesta en marcha
+
+Requiere Docker Desktop.
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+python scripts/dev_synthetic_demo.py      # o 06_export_demo.py con datos reales
+docker compose exec backend uv run python -m src.seed
+```
+
+| Servicio | URL |
+|---|---|
+| API (Swagger) | http://localhost:8000/docs |
+| pgAdmin | http://localhost:8080 |
+
+`dev_synthetic_demo.py` genera **datos sintéticos** que solo sirven para desarrollar la interfaz. La API los marca con `isSynthetic` y el frontend muestra un aviso. Nunca deben usarse como resultados de la tesis.
+
+### Comandos (`Makefile`)
+
+En Windows sin `make`, usa el comando equivalente de la segunda columna.
+
+| `make` | Equivalente |
+|---|---|
+| `make up` / `make down` | `docker compose up -d` / `docker compose down -v` |
+| `make seed` | `docker compose exec backend uv run python -m src.seed` |
+| `make add-migration name="x"` | `docker compose exec backend bash -c "uv run alembic revision --autogenerate -m 'x'"` |
+| `make install-python name="pkg"` | `docker compose exec backend uv add pkg` y luego copiar `pyproject.toml` y `uv.lock` con `docker compose cp` |
+| `make integration-test` | `docker compose exec backend uv run pytest src/test -v` |
+
+`make integration-test` vacía las tablas del prototipo. Después de correrlo, vuelve a ejecutar `make seed`.
 
 ## Trazabilidad de requisitos
 
