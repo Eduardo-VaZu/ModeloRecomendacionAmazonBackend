@@ -1,0 +1,21 @@
+/.claude
+
+# Entorno
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Datos y artefactos generados (se reproducen con scripts/)
+data/**
+!data/**/
+!data/**/.gitkeep
+artifacts/*
+!artifacts/.gitkeep
+reports/tables/*
+!reports/tables/.gitkeep
+reports/figures/*
+!reports/figures/.gitkeep
