@@ -96,6 +96,7 @@ En Windows sin `make`, usa el comando equivalente de la segunda columna.
 - **Relevancia:** un producto de test cuenta como relevante si su rating es mayor o igual a `relevance_threshold` (4 por defecto).
 - **F1@K:** es la media armónica de Precision@K y Recall@K, ambas promediadas entre usuarios.
 - **RMSE y MAE con ALS:** `implicit` no predice ratings, así que una regresión de scikit-learn calibra los puntajes a la escala de 1 a 5, usando solo datos de entrenamiento.
+- **Completitud (R13):** se mide por campo de metadatos (I1 = valores no nulos / valores esperados), no por producto. Los campos que no llegan al 90 % (en Video_Games, `features` y `description`) se conservan, y sus valores faltantes se imputan con texto vacío al construir el texto de la Etapa 1. Ningún producto se elimina por completitud. Los porcentajes quedan en `quality_report.json`.
 - **Estado de conversión (exclusión B2B):** no aplica, porque Amazon Reviews 2023 no tiene ese campo.
 
 ## Limitaciones

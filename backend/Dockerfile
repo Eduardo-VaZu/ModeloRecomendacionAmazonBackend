@@ -1,6 +1,7 @@
 FROM python:3.14-slim AS base
 COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /uvx /bin/
 ENV UV_LINK_MODE=copy \
+    UV_HTTP_TIMEOUT=300 \
     PYTHONUNBUFFERED=1
 WORKDIR /code
 COPY pyproject.toml uv.lock* ./

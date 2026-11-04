@@ -20,7 +20,11 @@ def _flatten(value: object) -> str:
 
 
 def build_item_text(meta: pd.DataFrame) -> pd.Series:
-    """Concatena los campos descriptivos de cada producto en un solo texto."""
+    """Concatena los campos descriptivos de cada producto en un solo texto.
+
+    Los campos faltantes se imputan con texto vacío (tratamiento de R13 para los campos con
+    completitud menor al umbral).
+    """
     return meta[TEXT_FIELDS].map(_flatten).agg(" ".join, axis=1).str.lower()
 
 

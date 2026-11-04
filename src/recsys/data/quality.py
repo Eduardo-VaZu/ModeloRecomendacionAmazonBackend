@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,11 @@ def completeness(frame: pd.DataFrame, columns: Sequence[str]) -> pd.Series:
     return frame[list(columns)].map(_is_filled).mean(axis=1)
 
 
+def field_completeness(frame: pd.DataFrame, columns: Sequence[str]) -> pd.Series:
+    """Proporción de registros con contenido en cada campo."""
+    return frame[list(columns)].map(_is_filled).mean(axis=0)
+
+
 def filter_by_completeness(
     frame: pd.DataFrame, columns: Sequence[str], min_ratio: float
 ) -> pd.DataFrame:
@@ -47,9 +53,14 @@ def apply_quality_rules(
     meta: pd.DataFrame,
     meta_fields: Sequence[str],
     min_completeness: float,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, int]]:
-    """Aplica las reglas de calidad y devuelve cuántos registros eliminó cada una."""
-    report: dict[str, int] = {}
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Aplica las reglas de calidad y devuelve cuántos registros eliminó cada una.
+
+    La completitud de los metadatos se mide por campo (I1 = valores no nulos / valores
+    esperados). Un campo bajo `min_completeness` no elimina productos: se conserva y sus
+    valores faltantes se imputan con texto vacío al construir el texto de la Etapa 1.
+    """
+    report: dict[str, Any] = {}
 
     complete_reviews = filter_by_completeness(reviews, REQUIRED_REVIEW_FIELDS, 1.0)
     report["reviews_incomplete"] = len(reviews) - len(complete_reviews)
@@ -60,10 +71,12 @@ def apply_quality_rules(
     unique_meta = meta.drop_duplicates(ITEM_ID, keep="first")
     report["meta_duplicated"] = len(meta) - len(unique_meta)
 
-    complete_meta = filter_by_completeness(unique_meta, meta_fields, min_completeness)
-    report["meta_incomplete"] = len(unique_meta) - len(complete_meta)
+    kept_reviews = unique_reviews[unique_reviews[ITEM_ID].isin(unique_meta[ITEM_ID])]
+    report["reviews_without_meta"] = len(unique_reviews) - len(kept_reviews)
 
-    kept_reviews = unique_reviews[unique_reviews[ITEM_ID].isin(complete_meta[ITEM_ID])]
-    report["reviews_without_valid_meta"] = len(unique_reviews) - len(kept_reviews)
+    by_field = field_completeness(unique_meta, meta_fields)
+    report["meta_field_completeness"] = by_field.round(4).to_dict()
+    report["meta_completeness"] = round(float(by_field.mean()), 4)
+    report["meta_fields_below_threshold"] = by_field.index[by_field < min_completeness].tolist()
 
-    return kept_reviews.reset_index(drop=True), complete_meta.reset_index(drop=True), report
+    return kept_reviews.reset_index(drop=True), unique_meta.reset_index(drop=True), report

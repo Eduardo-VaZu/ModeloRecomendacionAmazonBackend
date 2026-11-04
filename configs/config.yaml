@@ -1,10 +1,10 @@
 # Configuración única del experimento. Ningún parámetro va escrito en el código.
 seed: 42
 
-paths:                      # relativas a la raíz del proyecto
-  raw: data/raw
-  interim: data/interim
-  processed: data/processed
+paths:                      # relativas a la raíz del proyecto, o absolutas (datos en D: por espacio)
+  raw: D:/TESIS-data/raw
+  interim: D:/TESIS-data/interim
+  processed: D:/TESIS-data/processed
   reports: reports
   artifacts: artifacts
 
@@ -14,7 +14,7 @@ dataset:                    # R1: Amazon Reviews 2023
   reviews_url: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/{category}.jsonl
   meta_url: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_{category}.jsonl
 
-quality:                    # R13: duplicados y completitud
+quality:                    # R13: duplicados y completitud por campo (I1); bajo el umbral se imputa vacío
   min_completeness: 0.9
   meta_completeness_fields: [title, features, description, categories, store]
 
