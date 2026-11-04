@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:16-alpine
+    env_file: .env
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrations:
+    build:
+      context: ./backend
+      target: migration
+    env_file: .env
+    volumes:
+      - ./backend/src:/code/src
+      - ./backend/alembic.ini:/code/alembic.ini
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4:9.4
+    env_file: .env
+    ports:
+      - "8080:80"
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass:ro
+    depends_on:
+      db:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/code/src
+      - ./backend/alembic.ini:/code/alembic.ini
+      - ./artifacts/demo:/demo:ro
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

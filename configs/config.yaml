@@ -1,0 +1,50 @@
+# Configuración única del experimento. Ningún parámetro va escrito en el código.
+seed: 42
+
+paths:                      # relativas a la raíz del proyecto, o absolutas (datos en D: por espacio)
+  raw: D:/TESIS-data/raw
+  interim: D:/TESIS-data/interim
+  processed: D:/TESIS-data/processed
+  reports: reports
+  artifacts: artifacts
+
+dataset:                    # R1: Amazon Reviews 2023
+  name: McAuley-Lab/Amazon-Reviews-2023
+  category: Video_Games
+  reviews_url: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/review_categories/{category}.jsonl
+  meta_url: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023/resolve/main/raw/meta_categories/meta_{category}.jsonl
+
+quality:                    # R13: duplicados y completitud por campo (I1); bajo el umbral se imputa vacío
+  min_completeness: 0.9
+  meta_completeness_fields: [title, features, description, categories, store]
+
+filtering:                  # R2: perfiles activos
+  k_core: 5
+
+split:                      # partición temporal por usuario
+  val_ratio: 0.2
+  test_ratio: 0.2
+
+evaluation:                 # R7-R10
+  k_values: [5, 10, 20]
+  relevance_threshold: 4.0
+  batch_size: 512
+
+content:                    # R3: Etapa 1
+  max_features: 50000
+  ngram_range: [1, 2]
+  min_df: 2
+  n_candidates: 300
+
+als:                        # R4: Etapa 2
+  factors: 64
+  regularization: 0.01
+  iterations: 20
+  alpha: 40.0
+
+hybrid:                     # R5
+  blend_weight: 0.7         # peso de ALS en la mezcla con el puntaje de contenido
+
+demo:                       # paquete que consume el prototipo visual (backend/)
+  n_users: 500              # muestra de usuarios de test exportados
+  top_k: 20                 # recomendaciones guardadas por usuario y modelo
