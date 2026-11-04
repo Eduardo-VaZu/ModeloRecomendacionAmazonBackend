@@ -1,0 +1,9 @@
+{
+  "source": "Datos sintéticos de desarrollo",
+  "category": "Video_Games",
+  "is_synthetic": true,
+  "n_users": 60,
+  "n_items": 300,
+  "n_interactions": 687,
+  "n_candidates": 300
+}

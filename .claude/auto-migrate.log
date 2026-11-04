@@ -1,0 +1,14 @@
+[20261104_112210] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/enums.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/dataset_summary.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/product.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/demo_user.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/interaction.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/recommendation.py
+[20261104_112211] auto-migrate triggered by C:/Users/Jsubyante/Desktop/TESIS/recomender-amazon/backend/src/persistency/database/models/experiment_result.py
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.
+[20261104_112210] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112210"` manually.
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.
+[20261104_112211] SKIP: backend container is not running. Run `make up` then `make add-migration name="auto_20261104_112211"` manually.

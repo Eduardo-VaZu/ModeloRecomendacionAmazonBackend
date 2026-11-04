@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "async": true,
+            "timeout": 120,
+            "statusMessage": "Auto-generating Alembic migration...",
+            "command": "raw=$(python -c \"import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path','') or d.get('tool_response',{}).get('filePath',''))\" 2>/dev/null); [ -z \"$raw\" ] && exit 0; f=$(printf '%s' \"$raw\" | tr '\\\\' '/'); case \"$f\" in *backend/src/persistency/database/models/base/*) exit 0 ;; */backend/src/persistency/database/models/__init__.py) exit 0 ;; */backend/src/persistency/database/models/*.py) ts=$(date +%Y%m%d_%H%M%S); mkdir -p .claude; log=.claude/auto-migrate.log; printf '[%s] auto-migrate triggered by %s\\n' \"$ts\" \"$f\" >> \"$log\"; running=$(docker compose ps --status running --services 2>/dev/null | grep -x backend); if [ -z \"$running\" ]; then printf '[%s] SKIP: backend container is not running. Run `make up` then `make add-migration name=\"auto_%s\"` manually.\\n' \"$ts\" \"$ts\" >> \"$log\"; exit 0; fi; make add-migration name=\"auto_${ts}\" >> \"$log\" 2>&1 || true ;; esac"
+          }
+        ]
+      }
+    ]
+  }
+}

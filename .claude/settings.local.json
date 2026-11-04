@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Skill",
+      "Bash(bash:*)",
+      "Bash(which:*)",
+      "Bash(jq:*)",
+      "Bash(python:*)",
+      "Bash(cmd=$(python:*)",
+      "Bash(cat:*)",
+      "Bash(printf:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(cd:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(Get-ChildItem:*)",
+      "Bash(npm create:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
