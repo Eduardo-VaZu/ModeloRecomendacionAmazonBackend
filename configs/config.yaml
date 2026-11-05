@@ -40,8 +40,7 @@ statistics:                 # prueba de hipótesis sobre diferencias pareadas po
   alternative: greater      # H1 direccional: O2 (híbrido) > O1 (popularidad)
   min_relative_improvement: 0.10   # meta: mejora relativa >= 10 %
 
-# Los valores de content, als e hybrid se ajustaron con la muestra anterior (k-core, 60/20/20);
-# hay que volver a correr 04_tune con la muestra nueva y copiar aquí best_params.json.
+# Valores de content, als e hybrid elegidos por 04_tune en validación (best_params.json, NDCG@10).
 
 content:                    # VI-D1: módulo de filtrado basado en contenido (Etapa 1)
   text_fields: [title, features, description, categories, store]   # I1 = número de atributos
@@ -51,13 +50,13 @@ content:                    # VI-D1: módulo de filtrado basado en contenido (Et
   n_candidates: 3000        # ajustado en validación (04_tune)
 
 als:                        # VI-D2: módulo de factorización ALS (Etapa 2)
-  factors: 128              # I3; ajustado en validación (04_tune)
-  regularization: 0.01      # I4
+  factors: 64               # I3; ajustado en validación (04_tune)
+  regularization: 0.1       # I4; ajustado en validación (04_tune)
   iterations: 20
-  alpha: 40.0               # ajustado en validación (04_tune)
+  alpha: 10.0               # ajustado en validación (04_tune)
 
 hybrid:                     # VI-D3: estrategia de hibridación
-  blend_weight: 0.85        # I5: peso de ALS en la mezcla; ajustado en validación (04_tune)
+  blend_weight: 0.7         # I5: peso de ALS en la mezcla; ajustado en validación (04_tune)
 
 tuning:                     # 04_tune: búsqueda sobre validación (nunca sobre test)
   metric: ndcg@10           # I9 (calidad del ranking); F1 ya no es indicador de la matriz
