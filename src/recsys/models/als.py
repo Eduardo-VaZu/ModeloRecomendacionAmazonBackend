@@ -1,4 +1,5 @@
-"""R4 - Etapa 2: factorización de matrices con ALS de la librería `implicit`.
+"""VI-D2 / Etapa 2: factorización de matrices con ALS de la librería `implicit` (I3 factores
+latentes, I4 regularización).
 
 Combina las dos señales en la matriz usuarios × productos: la preferencia es 1 si la interacción
 existe (implícita) y la confianza es c = 1 + alpha * rating / 5 (explícita). Las celdas vacías
@@ -22,6 +23,7 @@ from recsys.data.dataset import InteractionData
 from recsys.models.base import Recommender
 from recsys.models.calibration import RatingBiases, RatingCalibrator
 from recsys.schema import ITEM_IDX, RATING, TIMESTAMP, USER_IDX
+from recsys.utils.timing import Timer
 
 
 class ALSRecommender(Recommender):
@@ -38,7 +40,10 @@ class ALSRecommender(Recommender):
         return train.to_csr(1.0 + self.config.alpha * ratings / 5.0)
 
     def _fit(self, train: InteractionData) -> None:
-        self._model = self._train_als(train)
+        with Timer() as timer:
+            self._model = self._train_als(train)
+        # Validación técnica: tiempo de la factorización, sin el ALS auxiliar del calibrador.
+        self.factorization_time_s = timer.seconds
         self._biases = RatingBiases.fit(train)
         self._calibrator = self._fit_calibrator(train)
 

@@ -1,4 +1,4 @@
-"""R5: modelo híbrido en dos etapas, medición O2 (post-test).
+"""VI-D3: sistema híbrido en dos etapas, medición O2 (Post-Test). `blend_weight` es I5.
 
 Etapa 1: `ContentBasedRecommender` elige los `n_candidates` productos no vistos más parecidos al
 perfil del usuario.
@@ -48,6 +48,21 @@ class HybridRecommender(Recommender):
         scores = np.full(content_scores.shape, -np.inf, dtype=np.float32)
         np.put_along_axis(scores, candidates, blended, axis=1)
         return scores
+
+    def stage_scores(
+        self, user_idx: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Candidatos y puntajes normalizados de cada etapa: (candidatos, contenido, ALS, final).
+
+        Lo usa el prototipo visual para mostrar cómo ALS reordena los candidatos del contenido.
+        """
+        content_scores = self.content._score_items(user_idx)
+        candidates = top_k(content_scores, self.n_candidates, self._seen[user_idx])
+        als_scores = self.als._score_items(user_idx)
+        content_part = _min_max(np.take_along_axis(content_scores, candidates, axis=1))
+        als_part = _min_max(np.take_along_axis(als_scores, candidates, axis=1))
+        weight = self.config.blend_weight
+        return candidates, content_part, als_part, weight * als_part + (1 - weight) * content_part
 
     def predict_rating(self, user_idx: np.ndarray, item_idx: np.ndarray) -> np.ndarray:
         """Mezcla de los ratings estimados por cada etapa, con el mismo peso que el ranking."""

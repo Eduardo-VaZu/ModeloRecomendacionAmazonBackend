@@ -1,4 +1,4 @@
-"""R3 - Etapa 1: filtrado basado en contenido.
+"""VI-D1 / Etapa 1: filtrado basado en contenido (I1 atributos, I2 dimensión del vector).
 
 Cada producto se representa con su vector TF-IDF (filas con norma L2 = 1). El perfil de un
 usuario es la suma de los vectores de sus productos de train ponderada por rating, y el puntaje de
@@ -31,8 +31,24 @@ class ContentBasedRecommender(Recommender):
         self.config = config
         self.items = items.sort_values(ITEM_IDX)
 
+    @property
+    def item_vectors(self) -> sp.csr_matrix:
+        """Vectores TF-IDF de los ítems (también los usa ILD@K, I12)."""
+        return self._item_vectors
+
+    @property
+    def n_attributes(self) -> int:
+        """I1: número de atributos de ítem incorporados."""
+        return len(self.config.text_fields)
+
+    @property
+    def vector_dimension(self) -> int:
+        """I2: dimensión del vector de características del ítem."""
+        return self._item_vectors.shape[1]
+
     def _fit(self, train: InteractionData) -> None:
-        self.vectorizer, self._item_vectors = fit_tfidf(build_item_text(self.items), self.config)
+        texts = build_item_text(self.items, self.config.text_fields)
+        self.vectorizer, self._item_vectors = fit_tfidf(texts, self.config)
         self._ratings = train.to_csr(train.frame[RATING].to_numpy(dtype=np.float32))
         self._interacted = train.to_csr()
         counts = np.asarray(self._interacted.sum(axis=1)).ravel()

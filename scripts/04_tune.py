@@ -22,7 +22,7 @@ from recsys.data.dataset import InteractionData
 from recsys.data.storage import load_items, load_splits
 from recsys.evaluation.coverage import catalog_coverage
 from recsys.evaluation.evaluator import evaluate
-from recsys.evaluation.ranking_metrics import ranking_scores_at_k
+from recsys.evaluation.ranking_metrics import per_user_ranking_metrics, ranking_scores_at_k
 from recsys.evaluation.rating_metrics import mae, rmse
 from recsys.models.als import ALSRecommender
 from recsys.models.base import top_k
@@ -103,8 +103,11 @@ def tune_hybrid(
         }
         for k in evaluation.k_values:
             scores = ranking_scores_at_k(recs, relevant.to_list(), k)
+            per_user = per_user_ranking_metrics(recs, relevant.to_list(), k)
             row |= {f"precision@{k}": scores.precision, f"recall@{k}": scores.recall}
             row |= {
+                f"ndcg@{k}": float(per_user["ndcg"].mean()),
+                f"mrr@{k}": float(per_user["mrr"].mean()),
                 f"f1@{k}": scores.f1,
                 f"coverage@{k}": catalog_coverage(recs[:, :k], val.n_items),
             }
@@ -133,6 +136,7 @@ def main() -> None:
         alpha=float(best_als["alpha"]),
     )
     content = ContentBasedRecommender(config.content, load_items(config.paths.processed))
+    # Train y val salen del 80 % de entrenamiento: test (20 %) no participa en el ajuste.
     als = ALSRecommender(als_config, config.seed)
     content.fit(train)
     als.fit(train)
