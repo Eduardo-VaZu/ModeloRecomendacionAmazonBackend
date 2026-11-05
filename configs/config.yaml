@@ -34,16 +34,24 @@ content:                    # R3: Etapa 1
   max_features: 50000
   ngram_range: [1, 2]
   min_df: 2
-  n_candidates: 300
+  n_candidates: 3000        # ajustado en validación (04_tune)
 
 als:                        # R4: Etapa 2
-  factors: 64
+  factors: 128              # ajustado en validación (04_tune)
   regularization: 0.01
   iterations: 20
-  alpha: 40.0
+  alpha: 40.0               # ajustado en validación (04_tune)
 
 hybrid:                     # R5
-  blend_weight: 0.7         # peso de ALS en la mezcla con el puntaje de contenido
+  blend_weight: 0.85        # ajustado en validación (04_tune); peso de ALS en la mezcla con el puntaje de contenido
+
+tuning:                     # 04_tune: búsqueda sobre validación (nunca sobre test)
+  metric: f1@10
+  als_factors: [32, 64, 128]
+  als_regularization: [0.01, 0.1]
+  als_alpha: [10.0, 40.0]
+  n_candidates: [100, 300, 1000, 3000]
+  blend_weights: [0.0, 0.25, 0.5, 0.7, 0.85, 1.0]
 
 demo:                       # paquete que consume el prototipo visual (backend/)
   n_users: 500              # muestra de usuarios de test exportados

@@ -87,6 +87,18 @@ class HybridConfig:
 
 
 @dataclass(frozen=True)
+class TuningConfig:
+    """Grillas que `04_tune` recorre sobre validación; `metric` decide la mejor combinación."""
+
+    metric: str
+    als_factors: tuple[int, ...]
+    als_regularization: tuple[float, ...]
+    als_alpha: tuple[float, ...]
+    n_candidates: tuple[int, ...]
+    blend_weights: tuple[float, ...]
+
+
+@dataclass(frozen=True)
 class DemoConfig:
     n_users: int
     top_k: int
@@ -104,6 +116,7 @@ class Config:
     content: ContentConfig
     als: ALSConfig
     hybrid: HybridConfig
+    tuning: TuningConfig
     demo: DemoConfig
 
 
@@ -128,5 +141,8 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> Config:
         content=ContentConfig(**{**content, "ngram_range": tuple(content["ngram_range"])}),
         als=ALSConfig(**raw["als"]),
         hybrid=HybridConfig(**raw["hybrid"]),
+        tuning=TuningConfig(
+            **{key: tuple(v) if isinstance(v, list) else v for key, v in raw["tuning"].items()}
+        ),
         demo=DemoConfig(**raw["demo"]),
     )

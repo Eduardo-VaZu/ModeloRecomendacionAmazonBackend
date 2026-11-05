@@ -1,8 +1,8 @@
 """Paso 5: evalúa los modelos sobre test y guarda la tabla de resultados.
 
 Cada modelo se reentrena con train + validación antes de medirse en test, para que use la
-información más reciente de cada usuario. Mide O1 (modelos no personalizados) y la Etapa 1 de
-contenido. En la Fase 6 se añaden ALS, el híbrido (O2) y la tabla pre/post (R12).
+información más reciente de cada usuario. Mide O1 (modelos no personalizados), cada etapa por
+separado (contenido y ALS) y el híbrido (O2). En la Fase 6 se añade la tabla pre/post (R12).
 """
 
 import pandas as pd
@@ -10,8 +10,10 @@ import pandas as pd
 from recsys.config import load_config
 from recsys.data.storage import load_items, load_splits, train_with_validation
 from recsys.evaluation.evaluator import evaluate
+from recsys.models.als import ALSRecommender
 from recsys.models.baselines import ItemMeanRecommender, PopularityRecommender
 from recsys.models.content_based import ContentBasedRecommender
+from recsys.models.hybrid import HybridRecommender
 from recsys.utils.logging import get_logger
 from recsys.utils.seed import set_seed
 
@@ -28,6 +30,13 @@ def main() -> None:
         PopularityRecommender(),
         ItemMeanRecommender(),
         ContentBasedRecommender(config.content, items),
+        ALSRecommender(config.als, config.seed),
+        HybridRecommender(
+            ContentBasedRecommender(config.content, items),
+            ALSRecommender(config.als, config.seed),
+            config.hybrid,
+            config.content.n_candidates,
+        ),
     )
     train = train_with_validation(splits)
     results = []
