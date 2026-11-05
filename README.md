@@ -20,13 +20,14 @@ pip install -e .
 |---|---|---|---|
 | 1. Descarga | `python scripts/01_download.py` | 02 Comprensión de los datos | — |
 | 2. Periodo → calidad → usuarios ≥ 5 → partición | `python scripts/02_preprocess.py` | 03 Preparación | `sample_report.json` |
+| (opcional) Análisis exploratorio | `python scripts/08_eda.py` | 02 Comprensión de los datos | `eda_*.csv`, `eda_summary.json`, `fig5`-`fig8` |
 | 3. Ajuste en validación (I3, I4, I5) | `python scripts/04_tune.py` | 04 Modelado | `tuning_als.csv`, `tuning_hybrid.csv`, `best_params.json` |
 | 4. Entrenamiento con train + validación | `python scripts/03_train.py` | 04 Modelado | `vi_parameters.csv` (+ `artifacts/models/`) |
 | 5. Pre-Test vs. Post-Test en test | `python scripts/05_evaluate.py` | 05 Evaluación | `results.csv`, `hypothesis_tests.csv`, `descriptive_stats.csv`, `pre_post.csv`, `hybridization_rate.csv`, `technical_validation.csv`, `per_user_metrics.csv` |
 | 6. Figuras del Capítulo IV | `python scripts/07_figures.py` | 05 Evaluación | `reports/figures/*.png` |
 | 7. Paquete del prototipo | `python scripts/06_export_demo.py` | 06 Despliegue | `artifacts/demo/` |
 
-Orden: 01 → 02 → 04 → copiar `best_params.json` a `configs/config.yaml` → 03 → 05 → 07 → 06. Todos los parámetros están en [`configs/config.yaml`](configs/config.yaml).
+Orden: 01 → 02 → 04 → copiar `best_params.json` a `configs/config.yaml` → 03 → 05 → 07 → 06 (08 cuando se quiera, después de 02). Con los hiperparámetros ya fijados, `make pipeline` corre 02 → 03 → 05 → 07 → 08. Todos los parámetros están en [`configs/config.yaml`](configs/config.yaml).
 
 ## Trazabilidad con la Matriz de Consistencia
 
@@ -73,6 +74,21 @@ Hipótesis → indicadores contrastados: **HE1** I7, I8 · **HE2** I9, I10 · **
 - **Sin deep learning ni agentes LLM:** es una decisión de alcance.
 - **Techo de la Etapa 1:** ALS solo reordena los candidatos que elige el contenido. Con la muestra vigente y 3.000 candidatos, el híbrido supera a ALS solo en NDCG@10 (0,0342 frente a 0,0331) y casi triplica su cobertura (32,2 % frente a 11,4 %).
 
+## Análisis exploratorio (Fase 02)
+
+`scripts/08_eda.py` repite los filtros de la preparación sobre los datos crudos y describe la muestra (`eda_summary.json`, figuras 5-8):
+
+| Paso | Reseñas | Usuarios | Ítems |
+|---|---:|---:|---:|
+| Video_Games completo | 4.624.615 | 2.766.656 | 137.249 |
+| Periodo ene-2022 a sep-2023 | 579.662 (12,5 %) | 434.097 | 47.081 |
+| Calidad (8.625 duplicados eliminados) | 571.037 (98,5 %) | 434.097 | 47.081 |
+| Usuarios con ≥ 5 interacciones (muestra) | 53.593 (9,4 %) | 6.869 | 15.710 |
+
+- **Calificaciones:** media 4,41 (DE 1,07); el 84,9 % son ≥ 4 (relevantes) y el 68,4 % son 5 estrellas.
+- **Cola larga:** mediana de 6 interacciones por usuario; el 54 % de los ítems tiene una sola interacción y el 10 % más popular concentra el 47 % de las interacciones.
+- **Tiempo:** la actividad de la muestra cae desde abril de 2023 hasta casi cero en septiembre (fin de la recolección del dataset). Como test toma las interacciones más recientes de cada usuario, conviene mencionarlo como limitación.
+
 ## Resultados en test (muestra vigente, Video_Games 2022-2023)
 
 Muestra: 579.662 reseñas del periodo → 6.869 usuarios, 15.710 ítems y 53.593 interacciones (densidad 0,0497 %), igual que la tesis. Se evalúan los 5.910 usuarios con al menos un ítem relevante en test. Hiperparámetros elegidos en validación por NDCG@10: 64 factores, regularización 0,1, α = 10, 3.000 candidatos y peso 0,7. Todas las tablas están en `reports/tables/`.
@@ -103,11 +119,11 @@ r = Z/√N de Wilcoxon (N = pares con diferencia ≠ 0; umbrales de Cohen 0,1 / 
 
 ## Pendientes
 
-1. **HE3:** decidir con el asesor cómo reportarla (rechazada con I12, discutiendo I11) o si se replantea su operacionalización, declarándolo.
-2. **Prototipo con datos reales:** correr `06_export_demo.py` y luego `make seed` para reemplazar los datos sintéticos.
-3. **Notebook de exploración (EDA):** distribución de ratings, interacciones por usuario y por producto, evolución en el tiempo, largo de los textos y conteos de cada paso del preprocesamiento.
-4. **Rutas de datos:** `config.yaml` apunta a `D:/TESIS-data`. Para reproducir en otra máquina, hay que cambiar las rutas o crear esa carpeta.
-5. **Opcional, ampliar la grilla de ajuste:** 3.000 candidatos (el máximo de la grilla) dio el mejor NDCG@10 en validación.
+1. **Rutas de datos:** `config.yaml` apunta a `D:/TESIS-data`. Para reproducir en otra máquina, hay que cambiar las rutas o crear esa carpeta.
+2. **Opcional, ampliar la grilla de ajuste:** 3.000 candidatos (el máximo de la grilla) dio el mejor NDCG@10 en validación.
+3. **Opcional, trabajo futuro para HE3:** una etapa de re-ranking por diversidad (p. ej., MMR) que suba el ILD sin perder la exactitud de HE1 y HE2.
+
+HE3 se reporta como no aceptada con I12, y la cobertura (I11) se discute como hallazgo descriptivo. El prototipo ya usa datos reales (`artifacts/demo/`, `make seed`).
 
 ## Backend del prototipo visual
 
@@ -150,6 +166,9 @@ En Windows sin `make`, usa el comando equivalente de la segunda columna.
 | `make add-migration name="x"` | `docker compose exec backend bash -c "uv run alembic revision --autogenerate -m 'x'"` |
 | `make install-python name="pkg"` | `docker compose exec backend uv add pkg` y luego copiar `pyproject.toml` y `uv.lock` con `docker compose cp` |
 | `make integration-test` | `docker compose exec backend uv run pytest src/test -v` |
+| `make pipeline` | 02 → 03 → 05 → 07 → 08 con `.venv/Scripts/python` (en Linux/macOS: `make pipeline PY=.venv/bin/python`) |
+| `make download` / `preprocess` / `tune` / `train` / `evaluate` / `figures` / `eda` | Cada paso del pipeline por separado |
+| `make test` / `make lint` | `pytest` / `ruff check src scripts tests` |
 
 `make integration-test` vacía las tablas del prototipo. Después de correrlo, vuelve a ejecutar `make seed`.
 

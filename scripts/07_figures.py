@@ -13,42 +13,32 @@ Cada modelo tiene siempre el mismo color en todas las figuras.
 
 from __future__ import annotations
 
-import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.colors import LinearSegmentedColormap
 
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-from matplotlib.colors import LinearSegmentedColormap  # noqa: E402
-
-from recsys.config import load_config  # noqa: E402
-from recsys.utils.logging import get_logger  # noqa: E402
+from recsys.config import load_config
+from recsys.plots import (
+    BLUES,
+    DPI,
+    GRID,
+    IMPROVE,
+    INK,
+    INK_2,
+    MODEL_COLORS,
+    MODEL_LABELS,
+    SURFACE,
+    TIE,
+    WORSE,
+    apply_style,
+)
+from recsys.utils.logging import get_logger
 
 logger = get_logger("07_figures")
 
 K = 10
 PRE, POST = "popularity", "hybrid"
-
-# Paleta categórica de referencia (orden fijo, validado para daltonismo) y tinta del gráfico.
-MODEL_COLORS = {
-    "hybrid": "#2a78d6",
-    "popularity": "#eb6834",
-    "als": "#1baf7a",
-    "content_based": "#eda100",
-    "item_mean": "#e87ba4",
-}
-MODEL_LABELS = {
-    "hybrid": "O2: híbrido",
-    "popularity": "O1: popularidad",
-    "als": "Etapa 2: ALS",
-    "content_based": "Etapa 1: contenido",
-    "item_mean": "Media por producto",
-}
-INK, INK_2, MUTED = "#0b0b0b", "#52514e", "#898781"
-GRID, BASELINE, SURFACE = "#e1e0d9", "#c3c2b7", "#ffffff"
-IMPROVE, TIE, WORSE = "#2a78d6", "#d6d5cf", "#e34948"  # divergente azul-gris-rojo
-BLUES = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 
 INDICATORS = [  # (indicador, métrica, nombre, es porcentaje)
     ("I7", "precision", "Precision@10", False),
@@ -59,28 +49,6 @@ INDICATORS = [  # (indicador, métrica, nombre, es porcentaje)
     ("I12", "ild", "ILD@10", False),
 ]
 
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Segoe UI", "Arial", "DejaVu Sans"],
-        "font.size": 9,
-        "text.color": INK,
-        "axes.edgecolor": BASELINE,
-        "axes.labelcolor": INK_2,
-        "axes.titlesize": 10,
-        "axes.titlecolor": INK,
-        "axes.spines.top": False,
-        "axes.spines.right": False,
-        "xtick.color": MUTED,
-        "ytick.color": MUTED,
-        "xtick.labelcolor": INK_2,
-        "ytick.labelcolor": INK_2,
-        "figure.facecolor": SURFACE,
-        "axes.facecolor": SURFACE,
-        "savefig.facecolor": SURFACE,
-        "legend.frameon": False,
-    }
-)
 
 
 def _fmt(value: float, percent: bool) -> str:
@@ -219,6 +187,7 @@ def fig4_tuning(tuning: pd.DataFrame, metric: str) -> plt.Figure:
 
 
 def main() -> None:
+    apply_style()
     config = load_config()
     tables, output = config.paths.tables, config.paths.reports / "figures"
     output.mkdir(parents=True, exist_ok=True)
@@ -234,7 +203,7 @@ def main() -> None:
         "fig4_ajuste_hibrido.png": fig4_tuning(tuning, config.tuning.metric),
     }
     for name, figure in figures.items():
-        figure.savefig(output / name, dpi=300, bbox_inches="tight")
+        figure.savefig(output / name, dpi=DPI, bbox_inches="tight")
         plt.close(figure)
         logger.info("Figura: %s", output / name)
 

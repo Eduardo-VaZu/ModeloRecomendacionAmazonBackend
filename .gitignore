@@ -29,6 +29,8 @@ reports/tables/*
 !reports/tables/technical_validation.csv
 !reports/tables/per_user_metrics.csv
 !reports/tables/descriptive_stats.csv
+!reports/tables/eda_*.csv
+!reports/tables/eda_summary.json
 reports/figures/*
 !reports/figures/.gitkeep
 !reports/figures/*.png
