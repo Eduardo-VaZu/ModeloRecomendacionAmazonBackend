@@ -1,0 +1,14 @@
+dimension,indicator,name,value,detail
+D1,I1,Número de atributos de ítem incorporados,5.0,"title, features, description, categories, store"
+D1,I2,Dimensión del vector de características del ítem,50000.0,"TF-IDF, ngram_range=(1, 2), min_df=2"
+D2,I3,Número de factores latentes,64.0,implicit ALS
+D2,I4,Coeficiente de regularización,0.1,implicit ALS
+D3,I5,Peso de combinación (peso de ALS),0.7,w · ALS + (1 − w) · contenido
+—,—,Candidatos de la Etapa 1,3000.0,
+—,—,Iteraciones de ALS,20.0,
+—,—,Alpha (confianza) de ALS,10.0,
+—,—,Semilla,42.0,
+—,—,Tiempo de factorización ALS (s),0.9989724999759346,validación técnica
+—,—,Tiempo ALS con calibración de ratings (s),1.9169739000499249,
+—,—,Tiempo de entrenamiento contenido (s),9.18626210000366,
+—,—,Tiempo de entrenamiento híbrido total (s),11.105333200073801,

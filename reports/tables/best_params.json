@@ -1,16 +1,16 @@
 {
-  "metric": "f1@10",
+  "metric": "ndcg@10",
   "als": {
-    "factors": 128,
-    "regularization": 0.01,
-    "alpha": 40.0
+    "factors": 64,
+    "regularization": 0.1,
+    "alpha": 10.0
   },
   "hybrid": {
     "n_candidates": 3000,
-    "blend_weight": 0.85
+    "blend_weight": 0.7
   },
   "validation": {
-    "als": 0.02192103532290708,
-    "hybrid": 0.021525661571599
+    "als": 0.032998228796633736,
+    "hybrid": 0.03939611915671279
   }
 }

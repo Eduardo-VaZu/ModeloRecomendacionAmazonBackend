@@ -52,7 +52,7 @@ Hipótesis → indicadores contrastados: **HE1** I7, I8 · **HE2** I9, I10 · **
 
 ## Decisiones metodológicas
 
-- **Orden de la Fase 03:** periodo → registros incompletos → una interacción por par usuario-ítem (la más reciente) → ítems sin metadatos → usuarios con ≥ 5 interacciones. `sample_report.json` permite compararlo con la tesis (6,869 usuarios, 15,710 ítems, 53,593 interacciones). **Aún no se ha verificado con los datos reales.**
+- **Orden de la Fase 03:** periodo → registros incompletos → una interacción por par usuario-ítem (la más reciente) → ítems sin metadatos → usuarios con ≥ 5 interacciones. `sample_report.json` permite compararlo con la tesis (6,869 usuarios, 15,710 ítems, 53,593 interacciones). Verificado con los datos reales: coincide exactamente.
 - **Partición temporal por usuario:** test es el 20 % más reciente de cada usuario (mínimo 1, redondeo hacia abajo). La validación del ajuste es el 20 % más reciente del 80 % restante. Así, test es exactamente el 20 % del 80/20 de la tesis, y train + validación es su 80 %.
 - **Reentrenamiento para test:** los hiperparámetros se eligen en validación; para la evaluación final, cada modelo (O1 y O2) se reentrena con train + validación y se mide en test. Con la muestra anterior, entrenar solo con train dejaba al modelo de contenido con R@10 = 0,0171 en test, frente a 0,0235 con train + validación; la popularidad casi no cambiaba (0,0276 frente a 0,0281).
 - **Confianza de ALS:** preferencia 1 si la interacción existe (señal implícita) y confianza c = 1 + α · rating / 5 (señal explícita).
@@ -69,27 +69,41 @@ Hipótesis → indicadores contrastados: **HE1** I7, I8 · **HE2** I9, I10 · **
 - **Cold start:** fuera del alcance, porque la muestra exige 5 interacciones por usuario. Los ítems con pocas interacciones sí se conservan; el módulo de contenido es el único que puede recomendarlos.
 - **Diseño pre-experimental sin grupo de control:** los resultados no se generalizan más allá del dataset y la muestra.
 - **Sin deep learning ni agentes LLM:** es una decisión de alcance.
-- **Techo de la Etapa 1:** ALS solo reordena los candidatos que elige el contenido. Con la muestra anterior y 3.000 candidatos, el híbrido quedó un 3,6 % por debajo de ALS solo en F1@10, pero cubrió un 44 % más del catálogo.
+- **Techo de la Etapa 1:** ALS solo reordena los candidatos que elige el contenido. Con la muestra vigente y 3.000 candidatos, el híbrido supera a ALS solo en NDCG@10 (0,0342 frente a 0,0331) y casi triplica su cobertura (32,2 % frente a 11,4 %).
 
-## Resultados con la muestra anterior (referencia)
+## Resultados en test (muestra vigente, Video_Games 2022-2023)
 
-Obtenidos **antes** de alinear el pipeline con la matriz vigente (k-core de usuarios e ítems, sin filtro de periodo, partición 60/20/20). Hay que regenerarlos con 02 → 04 → 03 → 05; `results.csv` y las tablas de ajuste versionadas todavía son las anteriores.
+Muestra: 579.662 reseñas del periodo → 6.869 usuarios, 15.710 ítems y 53.593 interacciones (densidad 0,0497 %), igual que la tesis. Se evalúan los 5.910 usuarios con al menos un ítem relevante en test. Hiperparámetros elegidos en validación por NDCG@10: 64 factores, regularización 0,1, α = 10, 3.000 candidatos y peso 0,7. Todas las tablas están en `reports/tables/`.
 
-| Modelo | RMSE | MAE | F1@10 | Cobertura@10 | Entrenamiento |
-|---|---:|---:|---:|---:|---:|
-| O1: popularidad | 1,263 | 0,982 | 0,0066 | 0,07 % | 0,007 s |
-| O1: media por producto | 1,216 | 0,913 | 0,0002 | 0,05 % | 0,009 s |
-| Etapa 1: contenido | 1,176 | 0,779 | 0,0053 | 81,9 % | 24,5 s |
-| Etapa 2: ALS | 1,112 | 0,792 | 0,0193 | 15,2 % | 21,3 s |
-| O2: híbrido | 1,112 | 0,787 | 0,0186 | 21,9 % | 46,5 s |
+| Modelo | Precision@10 | Recall@10 | NDCG@10 | MRR@10 | ILD@10 | Cobertura@10 | RMSE | MAE |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| O1: popularidad | 0,0027 | 0,0241 | 0,0135 | 0,0110 | 0,969 | 0,08 % | 1,075 | 0,815 |
+| O1: media por producto | 0,0007 | 0,0060 | 0,0030 | 0,0023 | 0,952 | 0,08 % | 1,064 | 0,783 |
+| Etapa 1: contenido | 0,0040 | 0,0309 | 0,0170 | 0,0141 | 0,729 | 65,6 % | 1,013 | 0,639 |
+| Etapa 2: ALS | 0,0071 | 0,0577 | 0,0331 | 0,0280 | 0,931 | 11,4 % | 0,965 | 0,663 |
+| O2: híbrido | 0,0077 | 0,0624 | 0,0342 | 0,0280 | 0,882 | 32,2 % | 0,965 | 0,652 |
+
+Contraste O1 vs. O2 (`hypothesis_tests.csv`, K = 10; Shapiro-Wilk rechaza la normalidad en todos los casos → Wilcoxon de rangos con signo, unilateral):
+
+| Hipótesis | Indicador | Mejora relativa | p | ¿Cumple la meta? |
+|---|---|---:|---:|:---:|
+| HE1 | I7 Precision@10 | +189 % | 8,6e-37 | Sí |
+| HE1 | I8 Recall@10 | +159 % | 1,8e-27 | Sí |
+| HE2 | I9 NDCG@10 | +153 % | 6,8e-24 | Sí |
+| HE2 | I10 MRR@10 | +154 % | 4,2e-24 | Sí |
+| HE3 | I12 ILD@10 | −9 % | 1,0 | **No** |
+
+- **HE3:** la lista de popularidad tiene un ILD alto porque sus 10 ítems son muy distintos entre sí, pero es la misma para todos los usuarios (cobertura 0,08 %). El híbrido personaliza: sus listas son más homogéneas por dentro (ILD 0,882), pero cubre 400 veces más catálogo (I11, descriptivo). Con I12 como indicador de contraste, HE3 no se acepta.
+- **VI:** I1 = 5 atributos, I2 = 50.000 (el vocabulario llega al tope de `max_features`), I3 = 64, I4 = 0,1, I5 = 0,7 e **I6 = 0,46** (el 46 % del Top-10 del híbrido no estaría en el Top-10 de ALS solo).
+- **Validación técnica:** RMSE 0,965 frente a 1,064 de la media del ítem (−9 %), MAE 0,652 frente a 0,783 (−17 %). La factorización de ALS tarda 1,0 s.
 
 ## Pendientes
 
-1. **Regenerar resultados con la muestra nueva:** 02 → 04 → copiar `best_params.json` a `config.yaml` → 03 → 05, y comprobar que `sample_report.json` coincida con la tesis.
+1. **HE3:** decidir con el asesor cómo reportarla (rechazada con I12, discutiendo I11) o si se replantea su operacionalización, declarándolo.
 2. **Prototipo con datos reales:** correr `06_export_demo.py` y luego `make seed` para reemplazar los datos sintéticos.
 3. **Notebook de exploración (EDA):** distribución de ratings, interacciones por usuario y por producto, evolución en el tiempo, largo de los textos y conteos de cada paso del preprocesamiento.
 4. **Rutas de datos:** `config.yaml` apunta a `D:/TESIS-data`. Para reproducir en otra máquina, hay que cambiar las rutas o crear esa carpeta.
-5. **Opcional, ampliar la grilla de ajuste:** 128 factores y 3.000 candidatos quedaron en el borde de la grilla anterior.
+5. **Opcional, ampliar la grilla de ajuste:** 3.000 candidatos (el máximo de la grilla) dio el mejor NDCG@10 en validación.
 
 ## Backend del prototipo visual
 
