@@ -14,3 +14,5 @@ class ImportDemoBundleResponse(BaseDataTransfer):
     interactions: int
     recommendations: int
     experiment_results: int
+    hypothesis_tests: int
+    vi_indicators: int

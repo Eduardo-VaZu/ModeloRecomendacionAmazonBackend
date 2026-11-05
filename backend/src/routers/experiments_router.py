@@ -11,6 +11,10 @@ from ..use_cases.experiments import (
     ExperimentResultsResponse,
     GetDatasetSummaryHandler,
     GetExperimentResultsHandler,
+    GetHypothesisTestsHandler,
+    GetViIndicatorsHandler,
+    HypothesisTestsResponse,
+    ViIndicatorsResponse,
 )
 from ..use_cases.shared.base_data_transfer import NoRequest
 
@@ -22,6 +26,22 @@ async def get_results(
     handler: Annotated[GetExperimentResultsHandler, Depends()],
 ) -> ExperimentResultsResponse:
     """Métricas de todos los modelos (tabla O1 vs. O2)."""
+    return await handler.execute(NoRequest())
+
+
+@experiments_router.get("/hypothesis-tests", response_model=HypothesisTestsResponse)
+async def get_hypothesis_tests(
+    handler: Annotated[GetHypothesisTestsHandler, Depends()],
+) -> HypothesisTestsResponse:
+    """Contraste de HE1-HE3: Shapiro-Wilk, Wilcoxon o t pareada, p, tamaño del efecto y meta."""
+    return await handler.execute(NoRequest())
+
+
+@experiments_router.get("/vi-indicators", response_model=ViIndicatorsResponse)
+async def get_vi_indicators(
+    handler: Annotated[GetViIndicatorsHandler, Depends()],
+) -> ViIndicatorsResponse:
+    """Indicadores de la variable independiente (I1-I6)."""
     return await handler.execute(NoRequest())
 
 

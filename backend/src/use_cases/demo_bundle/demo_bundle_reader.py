@@ -12,9 +12,11 @@ from ...persistency.database.models import (
     DatasetSummary,
     DemoUser,
     ExperimentResult,
+    HypothesisTest,
     Interaction,
     Product,
     Recommendation,
+    ViIndicator,
 )
 
 
@@ -55,6 +57,19 @@ class DemoBundleReader:
     def experiment_results(self) -> list[ExperimentResult]:
         """Métricas de evaluación por modelo."""
         return [ExperimentResult.model_validate(row) for row in self._rows("experiment_results")]
+
+    def hypothesis_tests(self) -> list[HypothesisTest]:
+        """Pruebas de hipótesis HE1-HE3 (opcional: los paquetes sintéticos no la traen)."""
+        rows = self._optional_rows("hypothesis_tests")
+        return [HypothesisTest.model_validate(row) for row in rows]
+
+    def vi_indicators(self) -> list[ViIndicator]:
+        """Indicadores I1-I6 de la variable independiente (opcional)."""
+        return [ViIndicator.model_validate(row) for row in self._optional_rows("vi_indicators")]
+
+    def _optional_rows(self, table: str) -> Iterator[dict[str, Any]]:
+        if (self._directory / f"{table}.jsonl").exists():
+            yield from self._rows(table)
 
     def _rows(self, table: str) -> Iterator[dict[str, Any]]:
         with (self._directory / f"{table}.jsonl").open(encoding="utf-8") as file:

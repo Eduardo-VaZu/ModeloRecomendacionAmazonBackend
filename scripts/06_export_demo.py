@@ -86,6 +86,33 @@ def _experiment_results(config: Config) -> pd.DataFrame:
     return results_to_long(pd.read_csv(path))
 
 
+def _hypothesis_tests(config: Config) -> pd.DataFrame | None:
+    """Pruebas HE1-HE3 de 05_evaluate; los valores no numéricos (NaN) se exportan como null."""
+    path = config.paths.tables / "hypothesis_tests.csv"
+    if not path.exists():
+        logger.warning("No existe %s; el paquete irá sin pruebas de hipótesis", path)
+        return None
+    tests = pd.read_csv(path)
+    return tests.astype({"effect_size_name": str, "effect_magnitude": str}).replace("nan", "")
+
+
+def _vi_indicators(config: Config) -> pd.DataFrame | None:
+    """I1-I5 de 03_train (vi_parameters.csv) e I6 por K de 05_evaluate."""
+    parameters = config.paths.tables / "vi_parameters.csv"
+    rate = config.paths.tables / "hybridization_rate.csv"
+    if not parameters.exists() or not rate.exists():
+        logger.warning("Faltan las tablas de la VI; el paquete irá sin I1-I6")
+        return None
+    vi = pd.read_csv(parameters)
+    vi = vi[vi["indicator"].str.match(r"^I\d+$")]
+    rows = vi[["dimension", "indicator", "name", "value"]].assign(k=pd.NA)
+    i6 = pd.read_csv(rate).assign(
+        dimension="D3", name="Tasa de hibridación del ranking"
+    ).rename(columns={"hybridization_rate": "value"})
+    frame = pd.concat([rows, i6[["dimension", "indicator", "name", "value", "k"]]])
+    return frame.assign(k=frame["k"].astype("Int64")).reset_index(drop=True)
+
+
 def main() -> None:
     config = load_config()
     set_seed(config.seed)
@@ -144,6 +171,8 @@ def main() -> None:
         interactions=history.rename(columns={ITEM_ID: "product_id"}),
         recommendations=recs,
         experiment_results=_experiment_results(config),
+        hypothesis_tests=_hypothesis_tests(config),
+        vi_indicators=_vi_indicators(config),
     )
     output = config.paths.artifacts / "demo"
     bundle.write(output)

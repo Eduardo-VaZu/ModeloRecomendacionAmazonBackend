@@ -16,10 +16,12 @@ from ..persistency.database.models import (
     DataSplit,
     DemoUser,
     ExperimentResult,
+    HypothesisTest,
     Interaction,
     Product,
     Recommendation,
     RecommenderModel,
+    ViIndicator,
 )
 from ..persistency.unit_of_work import UnitOfWork
 
@@ -30,6 +32,8 @@ TABLES = (
     "interaction",
     "recommendation",
     "experiment_result",
+    "hypothesis_test",
+    "vi_indicator",
 )
 
 
@@ -134,4 +138,45 @@ async def demo_data() -> None:
         await unit.experiment_results.bulk_create(
             [ExperimentResult(model=RecommenderModel.HYBRID, metric="rmse", value=0.95)]
         )
+        await unit.hypothesis_tests.bulk_create(
+            [
+                _hypothesis_test("HE3", "I12", "ild", 10, -0.09, meets_goal=False),
+                _hypothesis_test("HE1", "I7", "precision", 10, 1.89, meets_goal=True),
+                _hypothesis_test("HE1", "I7", "precision", 5, 1.44, meets_goal=True),
+            ]
+        )
+        await unit.vi_indicators.bulk_create(
+            [
+                ViIndicator(dimension="D3", indicator="I6", name="Tasa", k=10, value=0.46),
+                ViIndicator(dimension="D1", indicator="I1", name="Atributos", value=5),
+            ]
+        )
         await unit.commit()
+
+
+def _hypothesis_test(
+    hypothesis: str, indicator: str, metric: str, k: int, improvement: float, *, meets_goal: bool
+) -> HypothesisTest:
+    """Prueba de hipótesis mínima para los tests."""
+    return HypothesisTest(
+        hypothesis=hypothesis,
+        indicator=indicator,
+        metric=f"{metric}@{k}",
+        k=k,
+        n_pairs=100,
+        mean_o1=0.01,
+        mean_o2=0.01 * (1 + improvement),
+        relative_improvement=improvement,
+        n_improved=10,
+        n_tied=85,
+        n_worse=5,
+        shapiro_p=1e-20,
+        test="Wilcoxon rangos con signo",
+        statistic=300.0,
+        p_value=1e-5 if meets_goal else 1.0,
+        effect_size=0.45 if meets_goal else -0.8,
+        effect_size_name="r",
+        effect_magnitude="mediano" if meets_goal else "grande",
+        significant=meets_goal,
+        meets_goal=meets_goal,
+    )

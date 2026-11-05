@@ -27,6 +27,29 @@ RECOMMENDATION_COLUMNS = [
     "reason_product_id",
 ]
 RESULT_COLUMNS = ["model", "metric", "k", "value"]
+HYPOTHESIS_COLUMNS = [
+    "hypothesis",
+    "indicator",
+    "metric",
+    "k",
+    "n_pairs",
+    "mean_o1",
+    "mean_o2",
+    "relative_improvement",
+    "n_improved",
+    "n_tied",
+    "n_worse",
+    "shapiro_p",
+    "test",
+    "statistic",
+    "p_value",
+    "effect_size",
+    "effect_size_name",
+    "effect_magnitude",
+    "significant",
+    "meets_goal",
+]
+VI_COLUMNS = ["dimension", "indicator", "name", "k", "value"]
 
 _TABLES = {
     "products": PRODUCT_COLUMNS,
@@ -34,6 +57,11 @@ _TABLES = {
     "interactions": INTERACTION_COLUMNS,
     "recommendations": RECOMMENDATION_COLUMNS,
     "experiment_results": RESULT_COLUMNS,
+}
+# Tablas opcionales: los paquetes sintéticos no las traen y el backend las trata como vacías.
+_OPTIONAL_TABLES = {
+    "hypothesis_tests": HYPOTHESIS_COLUMNS,
+    "vi_indicators": VI_COLUMNS,
 }
 
 
@@ -56,11 +84,18 @@ class DemoBundle:
     interactions: pd.DataFrame
     recommendations: pd.DataFrame
     experiment_results: pd.DataFrame
+    hypothesis_tests: pd.DataFrame | None = None
+    vi_indicators: pd.DataFrame | None = None
 
     def write(self, directory: Path) -> None:
         """Valida las columnas de cada tabla y escribe el paquete en `directory`."""
         directory.mkdir(parents=True, exist_ok=True)
-        for name, columns in _TABLES.items():
+        tables = _TABLES | {
+            name: columns
+            for name, columns in _OPTIONAL_TABLES.items()
+            if getattr(self, name) is not None
+        }
+        for name, columns in tables.items():
             frame: pd.DataFrame = getattr(self, name)
             missing = set(columns) - set(frame.columns)
             if missing:

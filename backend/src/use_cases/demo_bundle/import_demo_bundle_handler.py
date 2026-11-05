@@ -23,6 +23,8 @@ class ImportDemoBundleHandler(BaseHandler[ImportDemoBundleRequest, ImportDemoBun
             unit.interactions,
             unit.recommendations,
             unit.experiment_results,
+            unit.hypothesis_tests,
+            unit.vi_indicators,
         )
         for repository in repositories:
             await repository.delete_all()
@@ -33,6 +35,8 @@ class ImportDemoBundleHandler(BaseHandler[ImportDemoBundleRequest, ImportDemoBun
         interactions = reader.interactions()
         recommendations = reader.recommendations()
         results = reader.experiment_results()
+        tests = reader.hypothesis_tests()
+        indicators = reader.vi_indicators()
 
         await unit.dataset_summaries.create(summary)
         await unit.products.bulk_create(products)
@@ -40,6 +44,8 @@ class ImportDemoBundleHandler(BaseHandler[ImportDemoBundleRequest, ImportDemoBun
         await unit.interactions.bulk_create(interactions)
         await unit.recommendations.bulk_create(recommendations)
         await unit.experiment_results.bulk_create(results)
+        await unit.hypothesis_tests.bulk_create(tests)
+        await unit.vi_indicators.bulk_create(indicators)
         await unit.commit()
 
         return ImportDemoBundleResponse(
@@ -49,4 +55,6 @@ class ImportDemoBundleHandler(BaseHandler[ImportDemoBundleRequest, ImportDemoBun
             interactions=len(interactions),
             recommendations=len(recommendations),
             experiment_results=len(results),
+            hypothesis_tests=len(tests),
+            vi_indicators=len(indicators),
         )
