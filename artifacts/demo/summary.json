@@ -1,9 +1,9 @@
 {
-  "source": "Datos sintéticos de desarrollo",
+  "source": "McAuley-Lab/Amazon-Reviews-2023",
   "category": "Video_Games",
-  "is_synthetic": true,
-  "n_users": 60,
-  "n_items": 300,
-  "n_interactions": 687,
-  "n_candidates": 300
+  "is_synthetic": false,
+  "n_users": 6869,
+  "n_items": 15710,
+  "n_interactions": 53593,
+  "n_candidates": 3000
 }
