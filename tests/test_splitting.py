@@ -1,5 +1,7 @@
+from recsys.data.dataset import InteractionData
 from recsys.data.preprocessing import encode_ids, k_core_filter
 from recsys.data.splitting import temporal_user_split
+from recsys.data.storage import train_with_validation
 from recsys.schema import TIMESTAMP, USER_IDX
 
 
@@ -17,3 +19,13 @@ def test_split_is_temporal_and_covers_every_user(raw_reviews):
     first_test = test.groupby(USER_IDX)[TIMESTAMP].min()
     assert (last_train < first_val).all()
     assert (last_val < first_test).all()
+
+
+def test_train_with_validation_joins_both_splits_and_keeps_shape(train_data):
+    val = InteractionData(train_data.frame.iloc[:2], train_data.n_users, train_data.n_items)
+    splits = {"train": train_data, "val": val, "test": val}
+
+    joined = train_with_validation(splits)
+
+    assert len(joined.frame) == len(train_data.frame) + 2
+    assert (joined.n_users, joined.n_items) == (train_data.n_users, train_data.n_items)

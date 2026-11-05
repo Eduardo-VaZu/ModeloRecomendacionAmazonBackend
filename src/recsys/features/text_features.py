@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -34,5 +35,6 @@ def fit_tfidf(texts: pd.Series, config: ContentConfig) -> tuple[TfidfVectorizer,
         ngram_range=config.ngram_range,
         min_df=config.min_df,
         sublinear_tf=True,
+        dtype=np.float32,
     )
     return vectorizer, vectorizer.fit_transform(texts)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from tqdm import tqdm
 
 from recsys.config import EvaluationConfig
 from recsys.data.dataset import InteractionData
@@ -50,8 +51,6 @@ def _recommend_in_batches(
 ) -> np.ndarray:
     if len(users) == 0:
         return np.empty((0, k), dtype=int)
-    batches = [
-        model.recommend(users[start : start + batch_size], k)
-        for start in range(0, len(users), batch_size)
-    ]
+    starts = tqdm(range(0, len(users), batch_size), desc=f"{model.name}: ranking", unit="lote")
+    batches = [model.recommend(users[start : start + batch_size], k) for start in starts]
     return np.vstack(batches)

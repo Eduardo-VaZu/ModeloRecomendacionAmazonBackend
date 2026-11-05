@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from recsys.config import Config, load_config
-from recsys.data.storage import load_items, load_splits
+from recsys.data.storage import load_items, load_splits, train_with_validation
 from recsys.export.demo_bundle import DatasetSummary, DemoBundle, results_to_long
 from recsys.models.base import Recommender
 from recsys.models.baselines import ItemMeanRecommender, PopularityRecommender
@@ -78,8 +78,9 @@ def main() -> None:
 
     models: list[Recommender] = [PopularityRecommender(), ItemMeanRecommender()]
     recommendations = []
+    train = train_with_validation(splits)  # mismo protocolo que 05_evaluate
     for model in models:
-        model.fit(splits["train"])
+        model.fit(train)
         recommendations.append(_recommendations(model, users, config.demo.top_k, relevant))
     recs = pd.concat(recommendations, ignore_index=True)
 

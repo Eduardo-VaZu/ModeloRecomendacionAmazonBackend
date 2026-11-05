@@ -93,6 +93,7 @@ En Windows sin `make`, usa el comando equivalente de la segunda columna.
 ## Decisiones metodológicas
 
 - **Partición temporal por usuario:** las interacciones más recientes de cada usuario van a test y las anteriores a validación. Nunca se usa información del futuro.
+- **Reentrenamiento para test:** los hiperparámetros se eligen en validación; para la evaluación final, cada modelo (O1 y O2) se reentrena con train + validación y se mide en test. En Video_Games, entrenar solo con train dejaba al modelo de contenido con R@10 = 0,0171 en test, frente a 0,0235 con train + validación; la popularidad casi no cambiaba (0,0276 frente a 0,0281). La diferencia se debe a la distancia temporal entre el historial y las compras de test.
 - **Relevancia:** un producto de test cuenta como relevante si su rating es mayor o igual a `relevance_threshold` (4 por defecto).
 - **F1@K:** es la media armónica de Precision@K y Recall@K, ambas promediadas entre usuarios.
 - **RMSE y MAE con ALS:** `implicit` no predice ratings, así que una regresión de scikit-learn calibra los puntajes a la escala de 1 a 5, usando solo datos de entrenamiento.
