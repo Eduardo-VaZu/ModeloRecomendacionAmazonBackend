@@ -6,7 +6,7 @@ import pytest
 from scipy import stats
 
 from recsys.config import StatisticsConfig
-from recsys.experiments.hypothesis_tests import hypothesis_table, paired_test
+from recsys.experiments.hypothesis_tests import descriptive_table, hypothesis_table, paired_test
 
 CONFIG = StatisticsConfig(alpha=0.05, alternative="greater", min_relative_improvement=0.10)
 
@@ -79,3 +79,45 @@ def test_hypothesis_table_rejects_different_users():
 
     with pytest.raises(ValueError):
         hypothesis_table(pre, post, CONFIG, "user_idx")
+
+
+def test_wilcoxon_reports_signed_effect_size_r():
+    rng = np.random.default_rng(4)
+    o1 = np.zeros(400)
+    o2 = rng.exponential(0.05, size=400) * (rng.random(400) < 0.5)
+
+    better = paired_test(o1, o2, CONFIG)
+    worse = paired_test(o2, o1, CONFIG)
+
+    assert better.effect_size_name == "r"
+    assert 0.5 <= better.effect_size <= 1  # todas las diferencias no nulas son positivas
+    assert better.effect_magnitude == "grande"
+    assert worse.effect_size == pytest.approx(-better.effect_size)
+    assert better.n_improved + better.n_tied + better.n_worse == 400
+    assert better.n_worse == 0
+
+
+def test_paired_t_reports_cohens_dz():
+    o1 = np.random.default_rng(5).normal(0.10, 0.02, size=200)
+    d = 0.03 + 0.01 * stats.norm.ppf((np.arange(200) + 0.5) / 200)
+
+    result = paired_test(o1, o1 + d, CONFIG)
+
+    assert result.effect_size_name == "d_z"
+    assert result.effect_size == pytest.approx(d.mean() / d.std(ddof=1))
+    assert result.effect_magnitude == "grande"
+
+
+def test_descriptive_table_summarises_every_model_and_metric():
+    frames = {
+        "popularity": pd.DataFrame({"user_idx": [0, 1, 2, 3], "ndcg@10": [0.0, 0.0, 0.5, 1.0]}),
+        "hybrid": pd.DataFrame({"user_idx": [0, 1, 2, 3], "ndcg@10": [0.2, 0.4, 0.6, 0.8]}),
+    }
+
+    table = descriptive_table(frames, "user_idx").set_index("model")
+
+    assert table.loc["popularity", "pct_zero"] == pytest.approx(0.5)
+    assert table.loc["popularity", "median"] == pytest.approx(0.25)
+    assert table.loc["hybrid", "mean"] == pytest.approx(0.5)
+    assert table.loc["hybrid", "indicator"] == "I9"
+    assert table.loc["hybrid", "k"] == 10

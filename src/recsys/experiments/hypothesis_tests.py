@@ -9,6 +9,15 @@ los mismos usuarios y se prueba la normalidad de las diferencias d = O2 − O1 c
 La meta de cada indicador exige además una mejora relativa >= `min_relative_improvement`
 respecto al modelo de referencia. La cobertura (I11) produce un solo valor por modelo y se
 reporta de forma descriptiva, fuera de esta prueba.
+
+Con miles de usuarios casi cualquier diferencia es significativa, así que cada prueba reporta
+también el tamaño del efecto:
+
+- Wilcoxon: r = Z / √N, con Z de la aproximación normal y N = pares con diferencia distinta de 0.
+  Umbrales de Cohen (1988): |r| < 0.1 despreciable, < 0.3 pequeño, < 0.5 mediano, >= 0.5 grande.
+- t pareada: d_z = media(d) / DE(d). Umbrales: < 0.2 despreciable, < 0.5 pequeño, < 0.8 mediano.
+
+El signo del efecto sigue al de O2 − O1: negativo significa que el híbrido empeora.
 """
 
 from __future__ import annotations
@@ -31,18 +40,38 @@ HYPOTHESES = {
 INDICATORS = {"precision": "I7", "recall": "I8", "ndcg": "I9", "mrr": "I10", "ild": "I12"}
 
 
+_R_THRESHOLDS = ((0.1, "despreciable"), (0.3, "pequeño"), (0.5, "mediano"))
+_D_THRESHOLDS = ((0.2, "despreciable"), (0.5, "pequeño"), (0.8, "mediano"))
+
+
+def _magnitude(value: float, thresholds: tuple[tuple[float, str], ...]) -> str:
+    if not np.isfinite(value):
+        return "—"
+    return next((label for limit, label in thresholds if abs(value) < limit), "grande")
+
+
 @dataclass(frozen=True)
 class PairedTestResult:
     metric: str
     n_pairs: int
     mean_o1: float
     mean_o2: float
+    sd_o1: float
+    sd_o2: float
+    median_o1: float
+    median_o2: float
     relative_improvement: float
+    n_improved: int  # usuarios con O2 > O1
+    n_tied: int  # usuarios con O2 = O1 (Wilcoxon los descarta)
+    n_worse: int  # usuarios con O2 < O1
     shapiro_p: float
     normal: bool
     test: str
     statistic: float
     p_value: float
+    effect_size: float
+    effect_size_name: str
+    effect_magnitude: str
     significant: bool
     meets_goal: bool
 
@@ -58,6 +87,7 @@ def paired_test(
     mean_o1, mean_o2 = float(o1.mean()), float(o2.mean())
     relative = (mean_o2 - mean_o1) / mean_o1 if mean_o1 else np.inf if mean_o2 > 0 else 0.0
 
+    effect, effect_name, magnitude = np.nan, "—", "—"
     if len(differences) < 3 or np.allclose(differences, differences[0]):
         # Sin variación no hay prueba posible: no se rechaza H0.
         shapiro_p, normal, test, statistic, p_value = np.nan, False, "sin variación", np.nan, 1.0
@@ -69,9 +99,17 @@ def paired_test(
         if normal:
             test = "t-Student muestras relacionadas"
             result = stats.ttest_rel(o2, o1, alternative=config.alternative)
+            effect, effect_name = float(differences.mean() / differences.std(ddof=1)), "d_z"
+            magnitude = _magnitude(effect, _D_THRESHOLDS)
         else:
             test = "Wilcoxon rangos con signo"
             result = stats.wilcoxon(o2, o1, alternative=config.alternative, zero_method="wilcox")
+            n_nonzero = int(np.count_nonzero(differences))
+            z = stats.wilcoxon(
+                o2, o1, alternative=config.alternative, zero_method="wilcox", method="approx"
+            ).zstatistic
+            effect, effect_name = float(z / np.sqrt(n_nonzero)), "r"
+            magnitude = _magnitude(effect, _R_THRESHOLDS)
         statistic, p_value = float(result.statistic), float(result.pvalue)
 
     significant = p_value < config.alpha
@@ -80,12 +118,22 @@ def paired_test(
         n_pairs=len(differences),
         mean_o1=mean_o1,
         mean_o2=mean_o2,
+        sd_o1=float(o1.std(ddof=1)) if len(o1) > 1 else np.nan,
+        sd_o2=float(o2.std(ddof=1)) if len(o2) > 1 else np.nan,
+        median_o1=float(np.median(o1)),
+        median_o2=float(np.median(o2)),
         relative_improvement=float(relative),
+        n_improved=int((differences > 0).sum()),
+        n_tied=int((differences == 0).sum()),
+        n_worse=int((differences < 0).sum()),
         shapiro_p=shapiro_p,
         normal=normal,
         test=test,
         statistic=statistic,
         p_value=p_value,
+        effect_size=effect,
+        effect_size_name=effect_name,
+        effect_magnitude=magnitude,
         significant=significant,
         meets_goal=significant and relative >= config.min_relative_improvement,
     )
@@ -112,5 +160,39 @@ def hypothesis_table(
             rows.append(
                 {"hypothesis": hypothesis, "indicator": INDICATORS[metric], "k": int(k)}
                 | asdict(result)
+            )
+    return pd.DataFrame(rows)
+
+
+def descriptive_table(per_user: dict[str, pd.DataFrame], user_col: str) -> pd.DataFrame:
+    """Estadística descriptiva por modelo e indicador (ficha de registro de métricas).
+
+    Una fila por (modelo, métrica, K): n, media, DE, mínimo, Q1, mediana, Q3, máximo y la
+    proporción de usuarios con valor 0 (la que hace que los datos no sean normales).
+    """
+    rows = []
+    for model, frame in per_user.items():
+        for column in frame.columns:
+            if column == user_col:
+                continue
+            metric, _, k = column.partition("@")
+            values = frame[column].to_numpy(dtype=float)
+            q1, median, q3 = np.percentile(values, [25, 50, 75])
+            rows.append(
+                {
+                    "model": model,
+                    "indicator": INDICATORS.get(metric, ""),
+                    "metric": metric,
+                    "k": int(k),
+                    "n": len(values),
+                    "mean": float(values.mean()),
+                    "sd": float(values.std(ddof=1)) if len(values) > 1 else np.nan,
+                    "min": float(values.min()),
+                    "q1": float(q1),
+                    "median": float(median),
+                    "q3": float(q3),
+                    "max": float(values.max()),
+                    "pct_zero": float((values == 0).mean()),
+                }
             )
     return pd.DataFrame(rows)

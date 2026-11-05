@@ -5,7 +5,9 @@ Escribe en `reports/tables/`:
 
 - `results.csv`: promedios de I7-I12 (y F1@K, RMSE, MAE, tiempo) de cada modelo.
 - `per_user_metrics.csv`: I7-I10 e I12 por usuario para O1 (popularidad) y O2 (híbrido).
-- `hypothesis_tests.csv`: Shapiro-Wilk + t pareada / Wilcoxon por indicador y K (HE1-HE3).
+- `hypothesis_tests.csv`: Shapiro-Wilk + t pareada / Wilcoxon por indicador y K (HE1-HE3),
+  con descriptivos de O1 y O2 y el tamaño del efecto.
+- `descriptive_stats.csv`: media, DE, cuartiles y % de ceros por usuario de los 5 modelos.
 - `pre_post.csv`: tabla O1 vs. O2 de los promedios, con la dirección de mejora.
 - `hybridization_rate.csv`: I6 (Top-K del híbrido vs. Top-K de ALS).
 - `technical_validation.csv`: RMSE y MAE frente a la media del ítem, y tiempo de ALS.
@@ -16,7 +18,7 @@ import pandas as pd
 from recsys.config import load_config
 from recsys.evaluation.evaluator import evaluate_with_details
 from recsys.evaluation.hybridization import hybridization_rate
-from recsys.experiments.hypothesis_tests import hypothesis_table
+from recsys.experiments.hypothesis_tests import descriptive_table, hypothesis_table
 from recsys.experiments.pre_post import pre_post_table
 from recsys.pipeline import load_models, load_processed
 from recsys.schema import USER_IDX
@@ -53,11 +55,16 @@ def main() -> None:
         [pre.per_user.assign(model=PRE_TEST), post.per_user.assign(model=POST_TEST)]
     ).to_csv(output / "per_user_metrics.csv", index=False)
 
+    descriptive_table(
+        {name: result.per_user for name, result in results.items()}, USER_IDX
+    ).to_csv(output / "descriptive_stats.csv", index=False)
+
     tests = hypothesis_table(pre.per_user, post.per_user, config.statistics, USER_IDX)
     tests.to_csv(output / "hypothesis_tests.csv", index=False)
     for row in tests.itertuples():
-        logger.info("%s %s: %s p=%.4g mejora=%.1f%% meta=%s", row.hypothesis, row.metric,
-                    row.test, row.p_value, 100 * row.relative_improvement, row.meets_goal)
+        logger.info("%s %s: %s p=%.4g mejora=%.1f%% %s=%.3f (%s) meta=%s", row.hypothesis,
+                    row.metric, row.test, row.p_value, 100 * row.relative_improvement,
+                    row.effect_size_name, row.effect_size, row.effect_magnitude, row.meets_goal)
 
     pre_post_table(pre.summary, post.summary).to_csv(output / "pre_post.csv", index=False)
 
