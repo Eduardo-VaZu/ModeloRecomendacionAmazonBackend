@@ -2,7 +2,8 @@
 
 Toma una muestra de usuarios de test, su historial y el Top-K de cada modelo entrenado en
 03_train. Para el híbrido guarda el puntaje de cada etapa (contenido, ALS y final) y, para todo
-modelo, el ítem del historial más parecido por contenido como "motivo" de la recomendación.
+modelo personalizado, el ítem del historial más parecido por contenido como "motivo" de la
+recomendación (los modelos no personalizados no llevan motivo).
 """
 
 import numpy as np
@@ -19,6 +20,8 @@ from recsys.utils.logging import get_logger
 from recsys.utils.seed import set_seed
 
 logger = get_logger("06_export_demo")
+
+PERSONALIZED = ("content_based", "als", "hybrid")  # usan el historial del usuario
 
 
 def _sample_users(test: pd.DataFrame, n_users: int, seed: int) -> np.ndarray:
@@ -110,8 +113,11 @@ def main() -> None:
         product_id=recs[ITEM_IDX].map(item_ids),
         reason_product_id=pd.Series(_reasons(recs, frames["train"], vectors)).map(item_ids),
     )
+    # Los modelos no personalizados no usan el historial: mostrar un "motivo" sería engañoso.
+    recs.loc[~recs["model"].isin(PERSONALIZED), "reason_product_id"] = None
 
-    used_items = set(history[ITEM_ID]) | set(recs["product_id"]) | set(recs["reason_product_id"])
+    reasons = set(recs["reason_product_id"].dropna())
+    used_items = set(history[ITEM_ID]) | set(recs["product_id"]) | reasons
     products = data.items[data.items[ITEM_ID].isin(used_items)]
 
     bundle = DemoBundle(
