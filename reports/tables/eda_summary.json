@@ -1,0 +1,38 @@
+{
+  "sample": {
+    "reviews_in_period": 579662,
+    "n_users": 6869,
+    "n_items": 15710,
+    "n_interactions": 53593,
+    "density_pct": 0.0497
+  },
+  "rating_mean": 4.4054074226111615,
+  "rating_sd": 1.0714571704678049,
+  "pct_relevant": 84.85436530890227,
+  "long_tail": {
+    "user_interactions_min": 5,
+    "user_interactions_median": 6.0,
+    "user_interactions_mean": 7.8021546076575925,
+    "user_interactions_max": 218,
+    "item_interactions_median": 1.0,
+    "item_interactions_mean": 3.411394016549968,
+    "item_interactions_max": 159,
+    "pct_items_single_interaction": 53.52641629535327,
+    "pct_interactions_top_1pct_items": 11.863489634840372,
+    "pct_interactions_top_10pct_items": 46.562051014124975
+  },
+  "splits": {
+    "train": 36225,
+    "val": 8246,
+    "test": 9122,
+    "train_plus_val": 44471
+  },
+  "meta_field_completeness": {
+    "title": 0.9999,
+    "features": 0.7123,
+    "description": 0.6231,
+    "categories": 0.9079,
+    "store": 0.9682
+  },
+  "reviews_duplicated": 8625
+}

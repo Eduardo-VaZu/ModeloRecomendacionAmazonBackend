@@ -132,6 +132,9 @@ def _experiment_results() -> pd.DataFrame:
             "precision": 0.012,
             "recall": 0.031,
             "f1": 0.017,
+            "ndcg": 0.014,
+            "mrr": 0.011,
+            "ild": 0.97,
             "coverage": 0.002,
             "train_time_s": 0.2,
         },
@@ -141,6 +144,9 @@ def _experiment_results() -> pd.DataFrame:
             "precision": 0.004,
             "recall": 0.010,
             "f1": 0.006,
+            "ndcg": 0.003,
+            "mrr": 0.002,
+            "ild": 0.95,
             "coverage": 0.004,
             "train_time_s": 0.3,
         },
@@ -150,6 +156,9 @@ def _experiment_results() -> pd.DataFrame:
             "precision": 0.021,
             "recall": 0.052,
             "f1": 0.030,
+            "ndcg": 0.017,
+            "mrr": 0.014,
+            "ild": 0.73,
             "coverage": 0.310,
             "train_time_s": 12.4,
         },
@@ -159,6 +168,9 @@ def _experiment_results() -> pd.DataFrame:
             "precision": 0.027,
             "recall": 0.066,
             "f1": 0.038,
+            "ndcg": 0.033,
+            "mrr": 0.028,
+            "ild": 0.93,
             "coverage": 0.180,
             "train_time_s": 41.7,
         },
@@ -168,11 +180,15 @@ def _experiment_results() -> pd.DataFrame:
             "precision": 0.034,
             "recall": 0.081,
             "f1": 0.048,
+            "ndcg": 0.034,
+            "mrr": 0.028,
+            "ild": 0.88,
             "coverage": 0.230,
             "train_time_s": 54.1,
         },
     }
-    ranking = {"precision", "recall", "f1", "coverage"}
+    # Mismas métricas que 05_evaluate (I7-I12 y F1); valores inventados, solo para la interfaz.
+    ranking = {"precision", "recall", "ndcg", "mrr", "ild", "f1", "coverage"}
     rows = [
         (model, metric, k, value * (1 + 0.15 * (k / 10 - 1)) if metric in ranking else value)
         for model, metrics in values.items()
