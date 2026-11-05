@@ -22,10 +22,11 @@ pip install -e .
 | 2. Periodo → calidad → usuarios ≥ 5 → partición | `python scripts/02_preprocess.py` | 03 Preparación | `sample_report.json` |
 | 3. Ajuste en validación (I3, I4, I5) | `python scripts/04_tune.py` | 04 Modelado | `tuning_als.csv`, `tuning_hybrid.csv`, `best_params.json` |
 | 4. Entrenamiento con train + validación | `python scripts/03_train.py` | 04 Modelado | `vi_parameters.csv` (+ `artifacts/models/`) |
-| 5. Pre-Test vs. Post-Test en test | `python scripts/05_evaluate.py` | 05 Evaluación | `results.csv`, `hypothesis_tests.csv`, `pre_post.csv`, `hybridization_rate.csv`, `technical_validation.csv`, `per_user_metrics.csv` |
-| 6. Paquete del prototipo | `python scripts/06_export_demo.py` | 06 Despliegue | `artifacts/demo/` |
+| 5. Pre-Test vs. Post-Test en test | `python scripts/05_evaluate.py` | 05 Evaluación | `results.csv`, `hypothesis_tests.csv`, `descriptive_stats.csv`, `pre_post.csv`, `hybridization_rate.csv`, `technical_validation.csv`, `per_user_metrics.csv` |
+| 6. Figuras del Capítulo IV | `python scripts/07_figures.py` | 05 Evaluación | `reports/figures/*.png` |
+| 7. Paquete del prototipo | `python scripts/06_export_demo.py` | 06 Despliegue | `artifacts/demo/` |
 
-Orden: 01 → 02 → 04 → copiar `best_params.json` a `configs/config.yaml` → 03 → 05 → 06. Todos los parámetros están en [`configs/config.yaml`](configs/config.yaml).
+Orden: 01 → 02 → 04 → copiar `best_params.json` a `configs/config.yaml` → 03 → 05 → 07 → 06. Todos los parámetros están en [`configs/config.yaml`](configs/config.yaml).
 
 ## Trazabilidad con la Matriz de Consistencia
 
@@ -44,7 +45,8 @@ Orden: 01 → 02 → 04 → copiar `best_params.json` a `configs/config.yaml` �
 | VD-D3 · I11 Coverage@K (descriptivo) | `evaluation/coverage.py` | `results.csv` | `tests/test_metrics.py` |
 | VD-D3 · I12 ILD@K | `evaluation/diversity.py` | `results.csv`, `per_user_metrics.csv` | `tests/test_metrics.py` |
 | Pre-Test O1 = popularidad; Post-Test O2 = híbrido | `scripts/05_evaluate.py` | `pre_post.csv` | — |
-| Shapiro-Wilk sobre diferencias → t pareada o Wilcoxon, α = 0.05; meta ≥ 10 % | `experiments/hypothesis_tests.py` | `hypothesis_tests.csv` | `tests/test_hypothesis.py` |
+| Shapiro-Wilk sobre diferencias → t pareada o Wilcoxon, α = 0.05; meta ≥ 10 %; tamaño del efecto | `experiments/hypothesis_tests.py` | `hypothesis_tests.csv` | `tests/test_hypothesis.py` |
+| Ficha de registro de métricas (Instrumento 05): descriptivos por usuario | `experiments/hypothesis_tests.py::descriptive_table` | `per_user_metrics.csv`, `descriptive_stats.csv` | `tests/test_hypothesis.py` |
 | Validación técnica: RMSE, MAE vs. media del ítem; tiempo de ALS | `models/calibration.py`, `models/als.py` | `technical_validation.csv` | `tests/test_als.py`, `tests/test_matrix_indicators.py` |
 | Python + scikit-learn + Implicit; sin deep learning ni LLM | `requirements.txt` | — | `tests/test_scope.py` |
 
@@ -85,15 +87,17 @@ Muestra: 579.662 reseñas del periodo → 6.869 usuarios, 15.710 ítems y 53.593
 
 Contraste O1 vs. O2 (`hypothesis_tests.csv`, K = 10; Shapiro-Wilk rechaza la normalidad en todos los casos → Wilcoxon de rangos con signo, unilateral):
 
-| Hipótesis | Indicador | Mejora relativa | p | ¿Cumple la meta? |
-|---|---|---:|---:|:---:|
-| HE1 | I7 Precision@10 | +189 % | 8,6e-37 | Sí |
-| HE1 | I8 Recall@10 | +159 % | 1,8e-27 | Sí |
-| HE2 | I9 NDCG@10 | +153 % | 6,8e-24 | Sí |
-| HE2 | I10 MRR@10 | +154 % | 4,2e-24 | Sí |
-| HE3 | I12 ILD@10 | −9 % | 1,0 | **No** |
+| Hipótesis | Indicador | Mejora relativa | p | Tamaño del efecto r | ¿Cumple la meta? |
+|---|---|---:|---:|---:|:---:|
+| HE1 | I7 Precision@10 | +189 % | 8,6e-37 | 0,57 (grande) | Sí |
+| HE1 | I8 Recall@10 | +159 % | 1,8e-27 | 0,48 (mediano) | Sí |
+| HE2 | I9 NDCG@10 | +153 % | 6,8e-24 | 0,43 (mediano) | Sí |
+| HE2 | I10 MRR@10 | +154 % | 4,2e-24 | 0,44 (mediano) | Sí |
+| HE3 | I12 ILD@10 | −9 % | 1,0 | −0,87 (grande, en contra) | **No** |
 
-- **HE3:** la lista de popularidad tiene un ILD alto porque sus 10 ítems son muy distintos entre sí, pero es la misma para todos los usuarios (cobertura 0,08 %). El híbrido personaliza: sus listas son más homogéneas por dentro (ILD 0,882), pero cubre 400 veces más catálogo (I11, descriptivo). Con I12 como indicador de contraste, HE3 no se acepta.
+r = Z/√N de Wilcoxon (N = pares con diferencia ≠ 0; umbrales de Cohen 0,1 / 0,3 / 0,5). En I7-I10, el 91-92 % de los usuarios empata (ningún acierto con ninguno de los dos modelos), el 7 % mejora y el 2 % empeora; en I12 empeora el 100 % (`reports/figures/fig2_pares_por_usuario.png`).
+
+- **HE3:** la lista de popularidad tiene un ILD alto porque sus 10 ítems son muy distintos entre sí, pero es la misma para todos los usuarios (cobertura 0,08 %). El híbrido personaliza: sus listas son más homogéneas por dentro (ILD 0,882), pero cubre 389 veces más catálogo (I11, descriptivo; `fig3_cobertura_vs_ild.png`). Con I12 como indicador de contraste, HE3 no se acepta.
 - **VI:** I1 = 5 atributos, I2 = 50.000 (el vocabulario llega al tope de `max_features`), I3 = 64, I4 = 0,1, I5 = 0,7 e **I6 = 0,46** (el 46 % del Top-10 del híbrido no estaría en el Top-10 de ALS solo).
 - **Validación técnica:** RMSE 0,965 frente a 1,064 de la media del ítem (−9 %), MAE 0,652 frente a 0,783 (−17 %). La factorización de ALS tarda 1,0 s.
 
