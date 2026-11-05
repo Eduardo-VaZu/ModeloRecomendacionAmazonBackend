@@ -17,6 +17,10 @@ artifacts/*
 !artifacts/.gitkeep
 reports/tables/*
 !reports/tables/.gitkeep
+# Evidencia para la tesis: resultados en test y ajuste en validación
+!reports/tables/results.csv
+!reports/tables/tuning_*.csv
+!reports/tables/best_params.json
 reports/figures/*
 !reports/figures/.gitkeep
 
